@@ -90,6 +90,16 @@ private:
 	void detachWidget(QWidget* Widget)
 	{
 		CDockAreaWidget* DockArea = qobject_cast<CDockAreaWidget*>(m_ParentLayout->parentWidget());
+		// Diagnostic A/B switch for ResInsight #14708. Avoid the temporary top-level
+		// transition without making OpenGL widgets or their ancestors native.
+		static const bool KeepDockParent = qEnvironmentVariableIntValue("RESINSIGHT_DOCK_KEEP_PARENT") > 0;
+		if (KeepDockParent && DockArea && DockArea->dockManager())
+		{
+			// setParent() may be a no-op; keep inactive docks hidden explicitly.
+			Widget->hide();
+			Widget->setParent(DockArea->dockManager());
+			return;
+		}
 		if (Widget->internalWinId() && DockArea && DockArea->dockManager())
 		{
 			Widget->setParent(DockArea->dockManager());
